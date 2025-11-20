@@ -1,10 +1,12 @@
 from django.shortcuts import render
 from django.db import connection
 from django.db.models import Avg, Sum
+from django.contrib.auth.decorators import login_required
 from core.models import (
     County, InfrastructureService, AgricultureSales,
     CountyEconomy, CountyDemographics
 )
+from core.permissions import can_execute_sql
 
 
 def run_sql(query: str):
@@ -14,12 +16,13 @@ def run_sql(query: str):
             cursor.execute(query)
             columns = [col[0] for col in cursor.description] if cursor.description else []
             rows = cursor.fetchall()
-        return {"columns": columns, "rows": rows}
+        return {"columns": columns, "rows": rows, "error": None}
     except Exception as e:
-        return {"columns": ["error"], "rows": [[str(e)]]}
+        return {"columns": ["error"], "rows": [[str(e)]], "error": str(e)}
 
 
 
+@login_required(login_url="/login/")
 def home(request):
     sql_query = ""
     ai_query = ""
@@ -30,7 +33,12 @@ def home(request):
     # --------------------------
     if request.method == "POST" and "sql_query" in request.POST:
         sql_query = request.POST.get("sql_query")
-        result = run_sql(sql_query)
+        # 检查权限
+        can_execute, perm_error = can_execute_sql(request.user, sql_query)
+        if not can_execute:
+            result = {"columns": ["错误"], "rows": [[perm_error]], "error": perm_error}
+        else:
+            result = run_sql(sql_query)
 
     # --------------------------
     # AI 查询（预留）

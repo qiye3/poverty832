@@ -12,7 +12,8 @@ from .views.generic_views import (
     DemoListView, DemoCreateView, DemoUpdateView
 )
 from .views.sql_console import sql_console
-from core.views.auth import user_login, user_logout
+from core.views.auth import user_login, user_logout, user_register
+from core.views.user_profile import user_profile, change_role
 
 
 urlpatterns = [
@@ -50,8 +51,9 @@ urlpatterns = [
     # Smart Query（大模型）
     path("smart/", smart_query, name="smart_query"),
 
-    # Auth login/logout
+    # Auth login/logout/register
     path("login/", user_login, name="login"),
+    path("register/", user_register, name="register"),
     path("logout/", user_logout, name="logout"),
 
     # Django Admin（可留可不留）

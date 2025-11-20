@@ -1,6 +1,8 @@
 from django.shortcuts import render
 from django.db import connection
+from django.contrib.auth.decorators import login_required
 from core.ai_utils import ask_doubao_sql
+from core.permissions import can_execute_sql
 
 def execute_sql(query: str):
     """执行 SQL 并返回结果"""
@@ -14,6 +16,7 @@ def execute_sql(query: str):
         return {"columns": [], "rows": [], "error": str(e)}
 
 
+@login_required(login_url="/login/")
 def smart_query(request):
     ai_query = ""
     ai_sql = ""
@@ -31,13 +34,18 @@ def smart_query(request):
         if not ai_sql:
             error = "AI 未能生成有效 SQL，请尝试换一种提问方式。"
         else:
-            # 2. 执行 SQL
-            sql_result = execute_sql(ai_sql)
-
-            if sql_result["error"]:
-                error = sql_result["error"]
+            # 2. 检查权限
+            can_execute, perm_error = can_execute_sql(request.user, ai_sql)
+            if not can_execute:
+                error = perm_error
             else:
-                result = sql_result
+                # 3. 执行 SQL
+                sql_result = execute_sql(ai_sql)
+
+                if sql_result["error"]:
+                    error = sql_result["error"]
+                else:
+                    result = sql_result
 
     return render(request, "core/smart_query.html", {
         "ai_query": ai_query,

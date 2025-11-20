@@ -1,5 +1,7 @@
 from django.views.generic import ListView, CreateView, UpdateView
 from django.urls import reverse_lazy
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import PermissionDenied
 
 from django.db.models import Avg, Sum
 
@@ -11,6 +13,7 @@ from core.forms import (
     CountyForm, InfraForm, AgriForm,
     EconomyForm, DemoForm
 )
+from core.permissions import has_table_edit_permission
 
 
 # ---------------------------
@@ -58,11 +61,24 @@ def stats_for_model(model):
 
 
 # ---------------------------
+# 表名映射（用于权限检查）
+# ---------------------------
+MODEL_TABLE_MAP = {
+    County: 'county',
+    InfrastructureService: 'infra',
+    AgricultureSales: 'agri',
+    CountyEconomy: 'economy',
+    CountyDemographics: 'demo',
+}
+
+
+# ---------------------------
 # 通用列表视图（带统计 + 动态字段）
 # ---------------------------
 
-class GenericListView(ListView):
+class GenericListView(LoginRequiredMixin, ListView):
     template_name = "core/generic_list.html"
+    login_url = reverse_lazy("login")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -75,10 +91,15 @@ class GenericListView(ListView):
             if field.name != model._meta.pk.name
         ]
 
+        # 获取表名用于权限检查
+        table_name = MODEL_TABLE_MAP.get(model, '')
+        can_edit = has_table_edit_permission(self.request.user, table_name)
+
         context.update({
             "model_name": model.__name__,
             "headers": headers,
             "stats": stats_for_model(model),
+            "can_edit": can_edit,
         })
         return context
 
@@ -87,8 +108,15 @@ class GenericListView(ListView):
 # 通用新增视图
 # ---------------------------
 
-class GenericCreateView(CreateView):
+class GenericCreateView(LoginRequiredMixin, CreateView):
     template_name = "core/generic_form.html"
+    login_url = reverse_lazy("login")
+
+    def dispatch(self, request, *args, **kwargs):
+        table_name = MODEL_TABLE_MAP.get(self.model, '')
+        if not has_table_edit_permission(request.user, table_name):
+            raise PermissionDenied("您没有编辑此表的权限")
+        return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
         return reverse_lazy(f"{self.model.__name__.lower()}_list")
@@ -104,8 +132,15 @@ class GenericCreateView(CreateView):
 # 通用编辑视图
 # ---------------------------
 
-class GenericUpdateView(UpdateView):
+class GenericUpdateView(LoginRequiredMixin, UpdateView):
     template_name = "core/generic_form.html"
+    login_url = reverse_lazy("login")
+
+    def dispatch(self, request, *args, **kwargs):
+        table_name = MODEL_TABLE_MAP.get(self.model, '')
+        if not has_table_edit_permission(request.user, table_name):
+            raise PermissionDenied("您没有编辑此表的权限")
+        return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
         return reverse_lazy(f"{self.model.__name__.lower()}_list")

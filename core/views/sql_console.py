@@ -1,5 +1,7 @@
 from django.shortcuts import render
 from django.db import connection
+from django.contrib.auth.decorators import login_required
+from core.permissions import can_execute_sql
 
 def execute_sql(query: str):
     """
@@ -25,6 +27,7 @@ def execute_sql(query: str):
         return {"columns": [], "rows": [], "error": str(e)}
 
 
+@login_required(login_url="/login/")
 def sql_console(request):
     sql_query = ""
     result = None
@@ -32,8 +35,14 @@ def sql_console(request):
 
     if request.method == "POST":
         sql_query = request.POST.get("sql_query", "")
-        result = execute_sql(sql_query)
-        error = result["error"]
+        
+        # 检查权限
+        can_execute, perm_error = can_execute_sql(request.user, sql_query)
+        if not can_execute:
+            error = perm_error
+        else:
+            result = execute_sql(sql_query)
+            error = result["error"]
 
     return render(request, "core/sql_console.html", {
         "sql_query": sql_query,
