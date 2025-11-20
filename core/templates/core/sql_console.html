@@ -17,6 +17,15 @@
 
 <h2 class="mb-4">🧪 SQL 查询控制台</h2>
 
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    {% endfor %}
+{% endif %}
+
 <form method="post">
     {% csrf_token %}
 
@@ -32,12 +41,6 @@
 </form>
 
 <hr>
-
-{% if error %}
-<div class="alert alert-danger">
-    ❌ <strong>SQL 错误：</strong> {{ error }}
-</div>
-{% endif %}
 
 {% if result %}
 <h4 class="mt-4">📄 查询结果</h4>

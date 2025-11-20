@@ -1,0 +1,114 @@
+{% extends "core/base.html" %}
+
+{% block content %}
+
+<h2 class="mb-4">📊 数据库详情</h2>
+
+<p class="text-muted mb-4">
+    此页面显示所有数据表的真实表名（可在SQL中直接使用）和列名信息。
+</p>
+
+{% for table in tables_info %}
+<div class="card mb-4 shadow-sm">
+    <div class="card-header" style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+        <h5 class="mb-0" style="color: #495057;">
+            <i class="fa fa-table text-secondary"></i> {{ table.display_name }}
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <strong>模型名称：</strong>{{ table.model_name }}
+            </div>
+            <div class="col-md-6">
+                <strong>数据库表名：</strong>
+                <code class="bg-light px-2 py-1 rounded">{{ table.table_name }}</code>
+            </div>
+        </div>
+        
+        <h6 class="mt-3 mb-3" style="color: #6c757d;">字段信息</h6>
+        <div class="table-responsive">
+            <table class="table table-bordered" style="border-color: #e9ecef;">
+                <thead style="background-color: #f8f9fa;">
+                    <tr>
+                        <th>模型字段名</th>
+                        <th>数据库列名</th>
+                        <th>数据类型</th>
+                        <th>主键</th>
+                        <th>允许NULL</th>
+                        <th>允许空白</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for field in table.fields %}
+                    <tr>
+                        <td style="background-color: #fafafa;">
+                            <code style="color: #495057; background-color: #e9ecef; padding: 2px 6px; border-radius: 3px;">{{ field.name }}</code>
+                            {% if field.primary_key %}
+                                <span class="badge ms-1" style="background-color: #dc3545; opacity: 0.8;">PK</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <code style="color: #0d6efd; background-color: #e7f1ff; padding: 2px 6px; border-radius: 3px;">{{ field.db_column }}</code>
+                            {% if field.related_table %}
+                                <br><small class="text-muted">→ {{ field.related_table }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge" style="background-color: #17a2b8; opacity: 0.85;">{{ field.type }}</span>
+                        </td>
+                        <td>
+                            {% if field.primary_key %}
+                                <span class="badge" style="background-color: #28a745; opacity: 0.85;">是</span>
+                            {% else %}
+                                <span class="text-muted">否</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if field.null %}
+                                <span class="badge" style="background-color: #ffc107; color: #856404; opacity: 0.9;">是</span>
+                            {% else %}
+                                <span class="text-muted">否</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if field.blank %}
+                                <span class="badge" style="background-color: #6c757d; opacity: 0.8;">是</span>
+                            {% else %}
+                                <span class="text-muted">否</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="mt-3">
+            <h6 style="color: #6c757d;">SQL 查询示例</h6>
+            <div style="background-color: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 3px solid #0d6efd;">
+                <code style="color: #495057;">
+                    SELECT * FROM {{ table.table_name }} LIMIT 10;
+                </code>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<div class="card shadow-sm">
+    <div class="card-header" style="background-color: #e7f3ff; border-bottom: 2px solid #b3d9ff;">
+        <h5 class="mb-0" style="color: #004085;">💡 使用提示</h5>
+    </div>
+    <div class="card-body" style="background-color: #f8f9fa;">
+        <ul style="color: #495057;">
+            <li class="mb-2"><strong>数据库表名</strong>：在SQL查询中直接使用此名称，例如：<code style="background-color: #e9ecef; padding: 2px 6px; border-radius: 3px;">SELECT * FROM {{ tables_info.0.table_name }};</code></li>
+            <li class="mb-2"><strong>数据库列名</strong>：在SQL查询中使用此名称来引用字段，例如：<code style="background-color: #e9ecef; padding: 2px 6px; border-radius: 3px;">SELECT {{ tables_info.0.fields.0.db_column }} FROM {{ tables_info.0.table_name }};</code></li>
+            <li class="mb-2"><strong>模型字段名</strong>：在Django ORM中使用此名称，例如：<code style="background-color: #e9ecef; padding: 2px 6px; border-radius: 3px;">County.objects.filter(name="...")</code></li>
+            <li>如果字段名和列名相同，说明没有自定义列名，可以直接使用字段名</li>
+        </ul>
+    </div>
+</div>
+
+{% endblock %}
+

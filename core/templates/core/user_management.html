@@ -83,6 +83,13 @@
                         </td>
                         <td>
                             <div class="btn-group btn-group-sm">
+                                <!-- 表权限按钮 -->
+                                <button type="button" class="btn btn-outline-info" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#permissionModal{{ item.user.id }}">
+                                    <i class="fa fa-key"></i> 表权限
+                                </button>
+                                
                                 <!-- 更改角色按钮 -->
                                 <button type="button" class="btn btn-outline-primary" 
                                         data-bs-toggle="modal" 
@@ -114,6 +121,76 @@
                             </div>
                         </td>
                     </tr>
+                    
+                    <!-- 表权限设置模态框 -->
+                    <div class="modal fade" id="permissionModal{{ item.user.id }}" tabindex="-1">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">设置用户表权限</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <form method="post" action="{% url 'set_user_table_permissions' item.user.id %}">
+                                    {% csrf_token %}
+                                    <div class="modal-body">
+                                        <p><strong>用户：</strong>{{ item.user.username }}</p>
+                                        <p class="text-muted"><small>设置用户对每张表的权限。如果未设置，将使用角色权限。</small></p>
+                                        
+                                        <table class="table table-bordered">
+                                            <thead>
+                                                <tr>
+                                                    <th>数据表</th>
+                                                    <th>查看权限</th>
+                                                    <th>编辑权限</th>
+                                                    <th>当前状态</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for table_key, perm in item.permissions.items %}
+                                                <tr>
+                                                    <td>{{ perm.name }}</td>
+                                                    <td>
+                                                        <div class="form-check form-switch">
+                                                            <input class="form-check-input" type="checkbox" 
+                                                                   name="view_{{ table_key }}" 
+                                                                   id="view_{{ table_key }}_{{ item.user.id }}"
+                                                                   {% if perm.view %}checked{% endif %}>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="form-check form-switch">
+                                                            <input class="form-check-input" type="checkbox" 
+                                                                   name="edit_{{ table_key }}" 
+                                                                   id="edit_{{ table_key }}_{{ item.user.id }}"
+                                                                   {% if perm.edit %}checked{% endif %}>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        {% if perm.source == 'custom' %}
+                                                            <span class="badge bg-info">自定义</span>
+                                                        {% else %}
+                                                            <span class="badge bg-secondary">角色</span>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                        
+                                        <div class="alert alert-warning">
+                                            <small>
+                                                <strong>注意：</strong>自定义权限会覆盖角色权限。如果取消所有自定义权限，将恢复使用角色权限。
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                                        <button type="submit" class="btn btn-primary">保存权限</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
                     
                     <!-- 更改角色模态框 -->
                     <div class="modal fade" id="roleModal{{ item.user.id }}" tabindex="-1">

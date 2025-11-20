@@ -1,6 +1,4 @@
 from django.urls import path
-from django.contrib import admin   # ← 新增
-from django.urls import include    # ← 新增
 
 from .views.home import home
 from .views.smart_query import smart_query
@@ -12,9 +10,10 @@ from .views.generic_views import (
     DemoListView, DemoCreateView, DemoUpdateView
 )
 from .views.sql_console import sql_console
-from core.views.auth import user_login, user_logout, user_register
-from core.views.user_profile import user_profile, change_role
-from core.views.admin_views import user_management, change_user_role, delete_user
+from .views.auth import user_login, user_logout, user_register
+from .views.user_profile import user_profile, change_role
+from .views.admin_views import user_management, change_user_role, toggle_admin, delete_user, set_user_table_permissions
+from .views.database_info import database_info
 
 
 urlpatterns = [
@@ -51,6 +50,9 @@ urlpatterns = [
 
     # Smart Query（大模型）
     path("smart/", smart_query, name="smart_query"),
+    
+    # Database Info
+    path("database/", database_info, name="database_info"),
 
     # Auth login/logout/register
     path("login/", user_login, name="login"),
@@ -61,12 +63,10 @@ urlpatterns = [
     path("profile/", user_profile, name="user_profile"),
     path("profile/change_role/", change_role, name="change_role"),
     
-    # Admin management
-    path("admin/users/", user_management, name="user_management"),
-    path("admin/users/<int:user_id>/change_role/", change_user_role, name="change_user_role"),
-    path("admin/users/<int:user_id>/toggle_admin/", toggle_admin, name="toggle_admin"),
-    path("admin/users/<int:user_id>/delete/", delete_user, name="delete_user"),
-
-    # Django Admin
-    path('admin/', admin.site.urls),
+    # Admin management (使用 manage/ 前缀避免与 Django admin 冲突)
+    path("manage/users/", user_management, name="user_management"),
+    path("manage/users/<int:user_id>/change_role/", change_user_role, name="change_user_role"),
+    path("manage/users/<int:user_id>/toggle_admin/", toggle_admin, name="toggle_admin"),
+    path("manage/users/<int:user_id>/table_permissions/", set_user_table_permissions, name="set_user_table_permissions"),
+    path("manage/users/<int:user_id>/delete/", delete_user, name="delete_user"),
 ]

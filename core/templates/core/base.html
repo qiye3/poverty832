@@ -119,6 +119,7 @@
     <a href="/demo/"><i class="fa fa-users"></i> 人口结构</a>
 
     <div class="sidebar-title">高级功能</div>
+    <a href="/database/"><i class="fa fa-database"></i> 数据库详情</a>
     <a href="/sql/"><i class="fa fa-terminal"></i> SQL 查询</a>
     <a href="/smart/"><i class="fa fa-brain"></i> 智能 AI 查询</a>
 
@@ -129,7 +130,7 @@
     
     {% if user.is_authenticated and user.is_superuser %}
     <div class="sidebar-title">管理员</div>
-    <a href="/admin/users/"><i class="fa fa-users-cog"></i> 用户管理</a>
+    <a href="/manage/users/"><i class="fa fa-users-cog"></i> 用户管理</a>
     <a href="/admin/"><i class="fa fa-cog"></i> Django 后台</a>
     {% endif %}
 </div>

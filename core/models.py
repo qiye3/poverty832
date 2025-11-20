@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 
 class County(models.Model):
@@ -71,3 +72,19 @@ class CountyDemographics(models.Model):
 
     def __str__(self):
         return f"{self.county.name} 人口结构 {self.year}"
+
+
+class UserTablePermission(models.Model):
+    """用户对每张表的细粒度权限"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='table_permissions')
+    table_name = models.CharField(max_length=50)  # 'county', 'infra', 'agri', 'economy', 'demo'
+    can_view = models.BooleanField(default=True)
+    can_edit = models.BooleanField(default=False)
+    
+    class Meta:
+        unique_together = ('user', 'table_name')
+        verbose_name = '用户表权限'
+        verbose_name_plural = '用户表权限'
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.table_name} (view:{self.can_view}, edit:{self.can_edit})"

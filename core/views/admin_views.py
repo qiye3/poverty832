@@ -3,7 +3,8 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User, Group
 from django.contrib import messages
 from django.db.models import Q
-from core.permissions import get_user_permissions
+from core.permissions import get_user_permissions, TABLE_DISPLAY_NAMES
+from core.models import UserTablePermission
 
 def is_admin(user):
     """检查用户是否是管理员"""
@@ -96,6 +97,34 @@ def toggle_admin(request, user_id):
                 user.save()
                 messages.success(request, f"用户 {user.username} 已提升为管理员")
         
+        return redirect("user_management")
+    
+    return redirect("user_management")
+
+
+@login_required
+@user_passes_test(is_admin, login_url="/login/")
+def set_user_table_permissions(request, user_id):
+    """管理员设置用户对每张表的权限"""
+    if request.method == "POST":
+        user = get_object_or_404(User, id=user_id)
+        
+        # 处理每张表的权限
+        for table_name in TABLE_DISPLAY_NAMES.keys():
+            can_view = request.POST.get(f"view_{table_name}") == "on"
+            can_edit = request.POST.get(f"edit_{table_name}") == "on"
+            
+            # 创建或更新权限
+            UserTablePermission.objects.update_or_create(
+                user=user,
+                table_name=table_name,
+                defaults={
+                    'can_view': can_view,
+                    'can_edit': can_edit,
+                }
+            )
+        
+        messages.success(request, f"用户 {user.username} 的表权限已更新")
         return redirect("user_management")
     
     return redirect("user_management")

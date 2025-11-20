@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.db import connection
 from django.db.models import Avg, Sum
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from core.models import (
     County, InfrastructureService, AgricultureSales,
     CountyEconomy, CountyDemographics
@@ -16,9 +17,10 @@ def run_sql(query: str):
             cursor.execute(query)
             columns = [col[0] for col in cursor.description] if cursor.description else []
             rows = cursor.fetchall()
-        return {"columns": columns, "rows": rows, "error": None}
+            rowcount = len(rows) if rows else cursor.rowcount
+        return {"columns": columns, "rows": rows, "error": None, "rowcount": rowcount}
     except Exception as e:
-        return {"columns": ["error"], "rows": [[str(e)]], "error": str(e)}
+        return {"columns": ["error"], "rows": [[str(e)]], "error": str(e), "rowcount": 0}
 
 
 
@@ -33,12 +35,30 @@ def home(request):
     # --------------------------
     if request.method == "POST" and "sql_query" in request.POST:
         sql_query = request.POST.get("sql_query")
-        # 检查权限
-        can_execute, perm_error = can_execute_sql(request.user, sql_query)
-        if not can_execute:
-            result = {"columns": ["错误"], "rows": [[perm_error]], "error": perm_error}
+        if not sql_query.strip():
+            messages.warning(request, "SQL 查询不能为空")
         else:
-            result = run_sql(sql_query)
+            # 检查权限
+            can_execute, perm_error = can_execute_sql(request.user, sql_query)
+            if not can_execute:
+                messages.error(request, f"❌ 权限错误：{perm_error}")
+                result = {"columns": ["错误"], "rows": [[perm_error]], "error": perm_error}
+            else:
+                result = run_sql(sql_query)
+                if result.get("error"):
+                    messages.error(request, f"❌ SQL 执行失败：{result['error']}")
+                else:
+                    # 判断是查询还是修改操作
+                    sql_upper = sql_query.strip().upper()
+                    if any(keyword in sql_upper for keyword in ['SELECT', 'SHOW', 'DESCRIBE', 'EXPLAIN']):
+                        row_count = result.get("rowcount", len(result.get("rows", [])))
+                        messages.success(request, f"✅ SQL 查询执行成功！返回 {row_count} 行数据")
+                    else:
+                        row_count = result.get("rowcount", 0)
+                        if row_count > 0:
+                            messages.success(request, f"✅ SQL 执行成功！影响 {row_count} 行数据")
+                        else:
+                            messages.success(request, "✅ SQL 执行成功！")
 
     # --------------------------
     # AI 查询（预留）
