@@ -139,9 +139,10 @@ USE_TZ = False
 # 静态文件
 # ===============================
 STATIC_URL = 'static/'
-STATICFILES_DIRS = [
-    BASE_DIR / "static",
-]
+# 注意：项目使用 CDN，不需要本地静态文件目录
+# STATICFILES_DIRS = [
+#     BASE_DIR / "static",
+# ]
 
 
 # ===============================
