@@ -1,0 +1,38 @@
+{% extends "core/base.html" %}
+{% load attr_extras %}
+
+{% block content %}
+
+<h2>{{ model_name }} 列表</h2>
+
+<a href="add/" class="btn btn-primary">新增 {{ model_name }}</a>
+
+<hr>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            {% for col in field_names %}
+                <th>{{ col }}</th>
+            {% endfor %}
+            <th>操作</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for obj in object_list %}
+        <tr>
+            {% for accessor in field_accessors %}
+                <td>{{ obj|attr:accessor }}</td>
+            {% endfor %}
+            <td>
+                <a href="{{ obj.pk }}/edit/" class="btn btn-sm btn-secondary">编辑</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="50">暂无数据</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "core/base.html" %}
+{% block content %}
+
+<h2>智能 SQL 查询</h2>
+
+<form method="post">
+    {% csrf_token %}
+    <textarea name="query" rows="4" cols="60">{{ query_text }}</textarea><br>
+    <button type="submit">执行查询</button>
+</form>
+
+{% if error %}
+    <p style="color:red;">错误：{{ error }}</p>
+{% endif %}
+
+{% if result %}
+    <h3>查询结果：</h3>
+    <table border="1" cellpadding="5">
+    {% for row in result %}
+        <tr>
+        {% for col in row %}
+            <td>{{ col }}</td>
+        {% endfor %}
+        </tr>
+    {% endfor %}
+    </table>
+{% endif %}
+
+{% endblock %}

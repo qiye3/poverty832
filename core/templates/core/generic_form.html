@@ -1,0 +1,14 @@
+{% extends "core/base.html" %}
+{% block content %}
+
+<h2>{{ model_name }} 表单</h2>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    <button type="submit" class="btn btn-success">保存</button>
+    <a href=".." class="btn btn-secondary">返回列表</a>
+</form>
+
+{% endblock %}
