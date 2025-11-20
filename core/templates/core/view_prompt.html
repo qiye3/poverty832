@@ -1,0 +1,62 @@
+{% extends "core/base.html" %}
+
+{% block content %}
+
+<h2 class="mb-4">📝 AI Prompt 配置</h2>
+
+<div class="card mb-4">
+    <div class="card-header" style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+        <h5 class="mb-0" style="color: #495057;">
+            <i class="fa fa-info-circle text-secondary"></i> 系统提示词（System Prompt）
+        </h5>
+    </div>
+    <div class="card-body">
+        <pre style="background-color: #f8f9fa; padding: 15px; border-radius: 6px; border-left: 3px solid #0d6efd; white-space: pre-wrap; word-wrap: break-word;">{{ prompt_config.system_prompt }}</pre>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header" style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+        <h5 class="mb-0" style="color: #495057;">
+            <i class="fa fa-database text-secondary"></i> 数据库表结构说明
+        </h5>
+    </div>
+    <div class="card-body">
+        <pre style="background-color: #f8f9fa; padding: 15px; border-radius: 6px; border-left: 3px solid #28a745; white-space: pre-wrap; word-wrap: break-word;">{{ prompt_config.table_schema }}</pre>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header" style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+        <h5 class="mb-0" style="color: #495057;">
+            <i class="fa fa-code text-secondary"></i> 用户提示词模板
+        </h5>
+    </div>
+    <div class="card-body">
+        <p class="text-muted mb-3">
+            <small>此模板中的 <code>{table_schema}</code> 和 <code>{question}</code> 会被实际内容替换</small>
+        </p>
+        <pre style="background-color: #f8f9fa; padding: 15px; border-radius: 6px; border-left: 3px solid #ffc107; white-space: pre-wrap; word-wrap: break-word;">{{ prompt_config.user_prompt_template }}</pre>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <p class="text-muted mb-0">
+            <small>
+                <strong>最后更新：</strong>{{ prompt_config.updated_at|date:"Y-m-d H:i:s" }}
+                {% if prompt_config.updated_by %}
+                    <strong>更新人：</strong>{{ prompt_config.updated_by.username }}
+                {% endif %}
+            </small>
+        </p>
+        {% if user.is_superuser %}
+        <a href="{% url 'edit_prompt' %}" class="btn btn-primary mt-3">
+            <i class="fa fa-edit"></i> 编辑 Prompt（管理员）
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+

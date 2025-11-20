@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.db import connection
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from core.ai_utils import ask_doubao_sql
+from core.ai_utils import ask_ai_sql, get_full_prompt
 from core.permissions import can_execute_sql
 
 def execute_sql(query: str):
@@ -32,8 +32,8 @@ def smart_query(request):
         if not ai_query.strip():
             messages.warning(request, "查询内容不能为空")
         else:
-            # 1. 让 Doubao 生成 SQL + 解释
-            ai_sql, explanation = ask_doubao_sql(ai_query)
+            # 1. 让 AI 生成 SQL + 解释
+            ai_sql, explanation = ask_ai_sql(ai_query)
 
             # 如果 SQL 为空，直接报错
             if not ai_sql:
@@ -57,10 +57,16 @@ def smart_query(request):
                         row_count = len(result.get("rows", []))
                         messages.success(request, f"✅ AI 查询执行成功！返回 {row_count} 行数据")
 
+    # 获取prompt信息（用于显示）
+    prompt_info = None
+    if ai_query:
+        prompt_info = get_full_prompt(ai_query)
+    
     return render(request, "core/smart_query.html", {
         "ai_query": ai_query,
         "ai_sql": ai_sql,
         "result": result,
         "explanation": explanation,
         "error": error,
+        "prompt_info": prompt_info,
     })

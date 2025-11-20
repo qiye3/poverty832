@@ -1,0 +1,74 @@
+{% extends "core/base.html" %}
+
+{% block content %}
+
+<h2 class="mb-4">✏️ 编辑 AI Prompt 配置</h2>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    {% endfor %}
+{% endif %}
+
+<form method="post">
+    {% csrf_token %}
+    
+    <div class="card mb-4">
+        <div class="card-header" style="background-color: #f8f9fa;">
+            <h5 class="mb-0">系统提示词（System Prompt）</h5>
+            <small class="text-muted">这是发送给AI的系统级提示，用于定义AI的角色和行为</small>
+        </div>
+        <div class="card-body">
+            <textarea name="system_prompt" class="form-control" rows="3" required>{{ prompt_config.system_prompt }}</textarea>
+        </div>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header" style="background-color: #f8f9fa;">
+            <h5 class="mb-0">数据库表结构说明</h5>
+            <small class="text-muted">描述数据库表结构，帮助AI理解数据库架构</small>
+        </div>
+        <div class="card-body">
+            <textarea name="table_schema" class="form-control" rows="20" required>{{ prompt_config.table_schema }}</textarea>
+        </div>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header" style="background-color: #f8f9fa;">
+            <h5 class="mb-0">用户提示词模板</h5>
+            <small class="text-muted">
+                用户提示词模板。使用 <code>{table_schema}</code> 和 <code>{question}</code> 作为占位符，它们会被实际内容替换。
+            </small>
+        </div>
+        <div class="card-body">
+            <textarea name="user_prompt_template" class="form-control" rows="15" required>{{ prompt_config.user_prompt_template }}</textarea>
+        </div>
+    </div>
+    
+    <div class="alert alert-info">
+        <strong>💡 提示：</strong>
+        <ul class="mb-0">
+            <li>修改后，所有新的AI查询都会使用新的prompt配置</li>
+            <li>建议在修改前先查看当前的prompt配置</li>
+            <li>确保模板中包含 <code>{table_schema}</code> 和 <code>{question}</code> 占位符</li>
+        </ul>
+    </div>
+    
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">
+            <i class="fa fa-save"></i> 保存配置
+        </button>
+        <a href="{% url 'view_prompt' %}" class="btn btn-secondary">
+            <i class="fa fa-eye"></i> 查看当前配置
+        </a>
+        <a href="{% url 'smart_query' %}" class="btn btn-outline-secondary">
+            <i class="fa fa-arrow-left"></i> 返回智能查询
+        </a>
+    </div>
+</form>
+
+{% endblock %}
+

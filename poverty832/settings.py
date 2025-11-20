@@ -7,7 +7,24 @@ from dotenv import load_dotenv
 import os
 
 load_dotenv()
-DOUBAO_API_KEY = os.getenv("DOUBAO_API_KEY")
+
+# ================================
+# AI 配置
+# ================================
+# AI服务类型：'doubao'（豆包/火山方舟）、'openai'（OpenAI）、'custom'（自定义OpenAI兼容API）
+AI_SERVICE_TYPE = os.getenv("AI_SERVICE_TYPE", "doubao")
+
+# AI API密钥（从环境变量读取，支持多种环境变量名）
+AI_API_KEY = os.getenv("AI_API_KEY") or os.getenv("DOUBAO_API_KEY") or os.getenv("ARK_API_KEY")
+
+# AI API基础URL（可选，如果不设置则使用默认值）
+AI_API_BASE = os.getenv("AI_API_BASE", None)
+
+# AI模型名称/Endpoint（可选，如果不设置则使用默认值）
+AI_MODEL = os.getenv("AI_MODEL", None)
+
+# 向后兼容
+DOUBAO_API_KEY = AI_API_KEY
 
 # ===============================
 # BASE_DIR

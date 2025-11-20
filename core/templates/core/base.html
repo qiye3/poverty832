@@ -122,6 +122,7 @@
     <a href="/database/"><i class="fa fa-database"></i> 数据库详情</a>
     <a href="/sql/"><i class="fa fa-terminal"></i> SQL 查询</a>
     <a href="/smart/"><i class="fa fa-brain"></i> 智能 AI 查询</a>
+    <a href="/prompt/"><i class="fa fa-eye"></i> 查看 AI Prompt</a>
 
     <div class="sidebar-title">系统</div>
     {% if user.is_authenticated %}
@@ -131,6 +132,7 @@
     {% if user.is_authenticated and user.is_superuser %}
     <div class="sidebar-title">管理员</div>
     <a href="/manage/users/"><i class="fa fa-users-cog"></i> 用户管理</a>
+    <a href="/prompt/edit/"><i class="fa fa-edit"></i> 编辑 AI Prompt</a>
     <a href="/admin/"><i class="fa fa-cog"></i> Django 后台</a>
     {% endif %}
 </div>

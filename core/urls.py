@@ -14,6 +14,7 @@ from .views.auth import user_login, user_logout, user_register
 from .views.user_profile import user_profile, change_role
 from .views.admin_views import user_management, change_user_role, toggle_admin, delete_user, set_user_table_permissions
 from .views.database_info import database_info
+from .views.ai_prompt import view_prompt, edit_prompt
 
 
 urlpatterns = [
@@ -53,6 +54,10 @@ urlpatterns = [
     
     # Database Info
     path("database/", database_info, name="database_info"),
+    
+    # AI Prompt
+    path("prompt/", view_prompt, name="view_prompt"),
+    path("prompt/edit/", edit_prompt, name="edit_prompt"),
 
     # Auth login/logout/register
     path("login/", user_login, name="login"),

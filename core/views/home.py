@@ -8,6 +8,7 @@ from core.models import (
     CountyEconomy, CountyDemographics
 )
 from core.permissions import can_execute_sql
+from core.ai_utils import ask_ai_sql
 
 
 def run_sql(query: str):
@@ -61,11 +62,38 @@ def home(request):
                             messages.success(request, "✅ SQL 执行成功！")
 
     # --------------------------
-    # AI 查询（预留）
+    # AI 查询
     # --------------------------
     if request.method == "POST" and "ai_query" in request.POST:
         ai_query = request.POST.get("ai_query")
-        result = {"columns": ["AI 暂未接入"], "rows": [[ai_query]]}
+        if not ai_query.strip():
+            messages.warning(request, "查询内容不能为空")
+        else:
+            # 1. 让 AI 生成 SQL + 解释
+            ai_sql, explanation = ask_ai_sql(ai_query)
+            
+            # 如果 SQL 为空，直接报错
+            if not ai_sql:
+                error_msg = explanation or "AI 未能生成有效 SQL，请尝试换一种提问方式。"
+                messages.error(request, f"❌ {error_msg}")
+                result = {"columns": ["错误"], "rows": [[error_msg]], "error": error_msg}
+            else:
+                # 2. 检查权限
+                can_execute, perm_error = can_execute_sql(request.user, ai_sql)
+                if not can_execute:
+                    messages.error(request, f"❌ 权限错误：{perm_error}")
+                    result = {"columns": ["错误"], "rows": [[perm_error]], "error": perm_error}
+                else:
+                    # 3. 执行 SQL
+                    result = run_sql(ai_sql)
+                    
+                    if result.get("error"):
+                        messages.error(request, f"❌ SQL 执行失败：{result['error']}")
+                    else:
+                        row_count = result.get("rowcount", len(result.get("rows", [])))
+                        messages.success(request, f"✅ AI 查询执行成功！返回 {row_count} 行数据")
+                        if explanation:
+                            messages.info(request, f"💡 AI说明：{explanation}")
 
     # --------------------------
     # 快速入口
