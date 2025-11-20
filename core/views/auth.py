@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.contrib import messages
 
 def user_login(request):
@@ -50,6 +50,11 @@ def user_register(request):
                     password=password,
                     email=email if email else ""
                 )
+                
+                # 自动添加到 analyst 组（如果组不存在则创建）
+                analyst_group, created = Group.objects.get_or_create(name="analyst")
+                user.groups.add(analyst_group)
+                
                 # 自动登录
                 login(request, user)
                 return redirect("/")  # 注册成功跳首页

@@ -1,0 +1,225 @@
+{% extends "core/base.html" %}
+
+{% block content %}
+
+<h2 class="mb-4">👥 用户管理</h2>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    {% endfor %}
+{% endif %}
+
+<!-- 搜索框 -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="d-flex">
+            <input type="text" name="search" class="form-control me-2" 
+                   placeholder="搜索用户名或邮箱..." 
+                   value="{{ search_query }}">
+            <button type="submit" class="btn btn-primary">
+                <i class="fa fa-search"></i> 搜索
+            </button>
+            {% if search_query %}
+            <a href="{% url 'user_management' %}" class="btn btn-secondary ms-2">清除</a>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<!-- 用户列表 -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">所有用户 ({{ users_with_permissions|length }})</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>用户名</th>
+                        <th>邮箱</th>
+                        <th>注册时间</th>
+                        <th>当前角色</th>
+                        <th>权限</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in users_with_permissions %}
+                    <tr>
+                        <td>{{ item.user.id }}</td>
+                        <td>
+                            {{ item.user.username }}
+                            {% if item.user.is_superuser %}
+                                <span class="badge bg-danger ms-1">管理员</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ item.user.email|default:"未设置" }}</td>
+                        <td>{{ item.user.date_joined|date:"Y-m-d H:i" }}</td>
+                        <td>
+                            {% if item.groups %}
+                                {% for group in item.groups %}
+                                    <span class="badge bg-primary me-1">{{ group.name }}</span>
+                                {% endfor %}
+                            {% else %}
+                                <span class="text-muted">无角色</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small>
+                                {% for table_key, perm in item.permissions.items %}
+                                    {% if perm.edit %}
+                                        <span class="badge bg-success me-1">{{ perm.name|slice:":4" }}✓</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary me-1">{{ perm.name|slice:":4" }}✗</span>
+                                    {% endif %}
+                                {% endfor %}
+                            </small>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <!-- 更改角色按钮 -->
+                                <button type="button" class="btn btn-outline-primary" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#roleModal{{ item.user.id }}">
+                                    <i class="fa fa-user-cog"></i> 角色
+                                </button>
+                                
+                                <!-- 管理员权限按钮 -->
+                                {% if item.user.id != user.id %}
+                                <button type="button" class="btn {% if item.user.is_superuser %}btn-warning{% else %}btn-outline-warning{% endif %}" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#adminModal{{ item.user.id }}">
+                                    <i class="fa fa-shield-alt"></i> {% if item.user.is_superuser %}取消管理员{% else %}设为管理员{% endif %}
+                                </button>
+                                {% endif %}
+                                
+                                <!-- 删除按钮 -->
+                                {% if item.user.id != user.id %}
+                                <button type="button" class="btn btn-outline-danger" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#deleteModal{{ item.user.id }}">
+                                    <i class="fa fa-trash"></i> 删除
+                                </button>
+                                {% else %}
+                                <button type="button" class="btn btn-outline-secondary" disabled>
+                                    <i class="fa fa-ban"></i> 自己
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    <!-- 更改角色模态框 -->
+                    <div class="modal fade" id="roleModal{{ item.user.id }}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">更改用户角色</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <form method="post" action="{% url 'change_user_role' item.user.id %}">
+                                    {% csrf_token %}
+                                    <div class="modal-body">
+                                        <p><strong>用户：</strong>{{ item.user.username }}</p>
+                                        <div class="mb-3">
+                                            <label class="form-label">选择角色</label>
+                                            <select name="group_id" class="form-select">
+                                                <option value="">-- 清除角色 --</option>
+                                                {% for group in all_groups %}
+                                                    <option value="{{ group.id }}" 
+                                                        {% if group in item.groups %}selected{% endif %}>
+                                                        {{ group.name }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="alert alert-info">
+                                            <small>
+                                                <strong>角色说明：</strong><br>
+                                                • <strong>data_entry</strong>：数据录入员，可以查看和编辑所有表<br>
+                                                • <strong>analyst</strong>：分析师，只能查看数据，不能编辑
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                                        <button type="submit" class="btn btn-primary">保存</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 管理员权限模态框 -->
+                    {% if item.user.id != user.id %}
+                    <div class="modal fade" id="adminModal{{ item.user.id }}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">{% if item.user.is_superuser %}取消管理员权限{% else %}提升为管理员{% endif %}</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    {% if item.user.is_superuser %}
+                                    <p>确定要取消用户 <strong>{{ item.user.username }}</strong> 的管理员权限吗？</p>
+                                    <p class="text-warning"><small>取消后，该用户将失去管理员权限，无法访问用户管理页面和Django后台。</small></p>
+                                    {% else %}
+                                    <p>确定要将用户 <strong>{{ item.user.username }}</strong> 提升为管理员吗？</p>
+                                    <p class="text-info"><small>提升后，该用户将拥有所有管理员权限，包括：<br>
+                                    • 查看和管理所有用户<br>
+                                    • 更改用户角色和权限<br>
+                                    • 删除用户<br>
+                                    • 访问Django后台</small></p>
+                                    {% endif %}
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                                    <form method="post" action="{% url 'toggle_admin' item.user.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn {% if item.user.is_superuser %}btn-warning{% else %}btn-success{% endif %}">
+                                            {% if item.user.is_superuser %}确认取消{% else %}确认提升{% endif %}
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- 删除确认模态框 -->
+                    <div class="modal fade" id="deleteModal{{ item.user.id }}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">确认删除</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p>确定要删除用户 <strong>{{ item.user.username }}</strong> 吗？</p>
+                                    <p class="text-danger"><small>此操作不可恢复！</small></p>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                                    <form method="post" action="{% url 'delete_user' item.user.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger">确认删除</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+

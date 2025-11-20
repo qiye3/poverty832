@@ -14,6 +14,7 @@ from .views.generic_views import (
 from .views.sql_console import sql_console
 from core.views.auth import user_login, user_logout, user_register
 from core.views.user_profile import user_profile, change_role
+from core.views.admin_views import user_management, change_user_role, delete_user
 
 
 urlpatterns = [
@@ -55,7 +56,17 @@ urlpatterns = [
     path("login/", user_login, name="login"),
     path("register/", user_register, name="register"),
     path("logout/", user_logout, name="logout"),
+    
+    # User profile
+    path("profile/", user_profile, name="user_profile"),
+    path("profile/change_role/", change_role, name="change_role"),
+    
+    # Admin management
+    path("admin/users/", user_management, name="user_management"),
+    path("admin/users/<int:user_id>/change_role/", change_user_role, name="change_user_role"),
+    path("admin/users/<int:user_id>/toggle_admin/", toggle_admin, name="toggle_admin"),
+    path("admin/users/<int:user_id>/delete/", delete_user, name="delete_user"),
 
-    # Django Admin（可留可不留）
+    # Django Admin
     path('admin/', admin.site.urls),
 ]

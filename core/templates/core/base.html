@@ -47,6 +47,18 @@
             margin-bottom: 5px;
             text-transform: uppercase;
         }
+        .logout-btn {
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            padding: 0.375rem 0.75rem;
+            vertical-align: middle;
+        }
+        .logout-btn:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
     </style>
 
     {% block extra_css %}{% endblock %}
@@ -65,7 +77,9 @@
             {% if user.is_authenticated %}
                 {% load attr_extras %}
                 <span class="navbar-text text-white me-3">
-                    👤 {{ user.username }}
+                    <a href="/profile/" class="text-white text-decoration-none">
+                        👤 {{ user.username }}
+                    </a>
                     
                     {% if user.is_superuser %}
                         <span class="badge bg-danger">管理员</span>
@@ -78,7 +92,9 @@
                     {% endif %}
                 </span>
 
-                <a href="/logout/" class="btn btn-outline-light btn-sm">退出</a>
+                <a href="/logout/" class="btn btn-outline-light btn-sm logout-btn">
+                    <i class="fa fa-sign-out-alt me-1"></i> 退出
+                </a>
 
             {% else %}
                 <a href="/register/" class="btn btn-outline-light btn-sm me-2">注册</a>
@@ -107,7 +123,15 @@
     <a href="/smart/"><i class="fa fa-brain"></i> 智能 AI 查询</a>
 
     <div class="sidebar-title">系统</div>
+    {% if user.is_authenticated %}
+    <a href="/profile/"><i class="fa fa-user"></i> 用户详情</a>
+    {% endif %}
+    
+    {% if user.is_authenticated and user.is_superuser %}
+    <div class="sidebar-title">管理员</div>
+    <a href="/admin/users/"><i class="fa fa-users-cog"></i> 用户管理</a>
     <a href="/admin/"><i class="fa fa-cog"></i> Django 后台</a>
+    {% endif %}
 </div>
 
 

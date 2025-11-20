@@ -12,6 +12,13 @@ def user_profile(request):
     
     # 获取用户当前所在的组
     user_groups = user.groups.all()
+    
+    # 确保默认组存在，如果不存在则创建
+    default_groups = ['data_entry', 'analyst']
+    for group_name in default_groups:
+        Group.objects.get_or_create(name=group_name)
+    
+    # 获取所有组
     all_groups = Group.objects.all()
     
     context = {

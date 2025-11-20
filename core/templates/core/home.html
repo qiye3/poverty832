@@ -48,6 +48,10 @@
 <!-- SQL 查询 -->
 <h4 class="mt-4">📝 SQL 查询</h4>
 
+{% if result and result.error %}
+<div class="alert alert-danger">{{ result.error }}</div>
+{% endif %}
+
 <form method="post" class="mb-4">
     {% csrf_token %}
     <textarea name="sql_query" class="form-control" rows="3"
