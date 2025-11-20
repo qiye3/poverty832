@@ -1,135 +1,186 @@
 from django.views.generic import ListView, CreateView, UpdateView
 from django.urls import reverse_lazy
 
+from django.db.models import Avg, Sum
+
 from core.models import (
-    County,
-    InfrastructureService,
-    AgricultureSales,
-    CountyEconomy,
-    CountyDemographics,
+    County, InfrastructureService, AgricultureSales,
+    CountyEconomy, CountyDemographics
+)
+from core.forms import (
+    CountyForm, InfraForm, AgriForm,
+    EconomyForm, DemoForm
 )
 
 
-# ========= 通用 Mixin：为模板提供 model_name ========= #
-class ModelNameMixin:
+# ---------------------------
+# 统计函数：根据模型自动生成统计卡片
+# ---------------------------
+
+def stats_for_model(model):
+    """根据不同模型生成统计卡片"""
+
+    if model == County:
+        return [
+            {"label": "县域数量", "value": model.objects.count()},
+            {"label": "省份数量", "value": model.objects.values("province").distinct().count()},
+        ]
+
+    elif model == CountyEconomy:
+        qs = model.objects
+        return [
+            {"label": "平均 GDP（亿元）", "value": round(qs.aggregate(Avg("gdp_total"))["gdp_total__avg"] or 0, 2)},
+            {"label": "平均财政收入（亿元）", "value": round(qs.aggregate(Avg("fiscal_revenue"))["fiscal_revenue__avg"] or 0, 2)},
+            {"label": "平均人均收入（元）", "value": round(qs.aggregate(Avg("per_capita_income"))["per_capita_income__avg"] or 0, 2)},
+        ]
+
+    elif model == InfrastructureService:
+        qs = model.objects
+        return [
+            {"label": "平均硬化路覆盖率", "value": round(qs.aggregate(Avg("pct_village_with_hard_road"))["pct_village_with_hard_road__avg"] or 0, 2)},
+            {"label": "平均宽带覆盖率", "value": round(qs.aggregate(Avg("broadband_coverage"))["broadband_coverage__avg"] or 0, 2)},
+        ]
+
+    elif model == CountyDemographics:
+        qs = model.objects
+        return [
+            {"label": "总人口数", "value": qs.aggregate(Sum("population_total"))["population_total__sum"] or 0},
+            {"label": "平均城镇化率", "value": round(qs.aggregate(Avg("urbanization_rate"))["urbanization_rate__avg"] or 0, 2)},
+        ]
+
+    elif model == AgricultureSales:
+        qs = model.objects
+        return [
+            {"label": "总销售额（亿元）", "value": round(qs.aggregate(Sum("sales_value"))["sales_value__sum"] or 0, 2)},
+        ]
+
+    return []
+
+
+# ---------------------------
+# 通用列表视图（带统计 + 动态字段）
+# ---------------------------
+
+class GenericListView(ListView):
+    template_name = "core/generic_list.html"
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        model = self.model
 
-        # 模型名称（避免 __name__）
-        context["model_name"] = (
-            self.model._meta.verbose_name or self.model.__name__
-        )
-
-        # 字段名列表（避免模板使用 _meta）
-        context["field_names"] = [
-            field.verbose_name or field.name
-            for field in self.model._meta.fields
+        # 自动表头：排除主键字段
+        headers = [
+            field.name
+            for field in model._meta.fields
+            if field.name != model._meta.pk.name
         ]
 
-        # 字段属性名（用于取值）
-        context["field_accessors"] = [
-            field.name for field in self.model._meta.fields
-        ]
-
+        context.update({
+            "model_name": model.__name__,
+            "headers": headers,
+            "stats": stats_for_model(model),
+        })
         return context
 
 
+# ---------------------------
+# 通用新增视图
+# ---------------------------
 
-# ==================== County ==================== #
-class CountyListView(ModelNameMixin, ListView):
+class GenericCreateView(CreateView):
+    template_name = "core/generic_form.html"
+
+    def get_success_url(self):
+        return reverse_lazy(f"{self.model.__name__.lower()}_list")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['list_url'] = reverse_lazy(f"{self.model.__name__.lower()}_list")
+        context['model_name'] = self.model.__name__
+        return context
+
+
+# ---------------------------
+# 通用编辑视图
+# ---------------------------
+
+class GenericUpdateView(UpdateView):
+    template_name = "core/generic_form.html"
+
+    def get_success_url(self):
+        return reverse_lazy(f"{self.model.__name__.lower()}_list")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['list_url'] = reverse_lazy(f"{self.model.__name__.lower()}_list")
+        context['model_name'] = self.model.__name__
+        return context
+
+
+# ---------------------------
+# 以下是五张表的具体派生视图
+# ---------------------------
+
+# --- County ---
+class CountyListView(GenericListView):
     model = County
-    template_name = "core/generic_list.html"
 
-
-class CountyCreateView(ModelNameMixin, CreateView):
+class CountyCreateView(GenericCreateView):
     model = County
-    fields = "__all__"
-    template_name = "core/generic_form.html"
-    success_url = reverse_lazy("county_list")
+    form_class = CountyForm
 
-
-class CountyUpdateView(ModelNameMixin, UpdateView):
+class CountyUpdateView(GenericUpdateView):
     model = County
-    fields = "__all__"
-    template_name = "core/generic_form.html"
-    success_url = reverse_lazy("county_list")
+    form_class = CountyForm
 
 
-# ================= Infrastructure ================= #
-class InfraListView(ModelNameMixin, ListView):
+# --- InfrastructureService ---
+class InfraListView(GenericListView):
     model = InfrastructureService
-    template_name = "core/generic_list.html"
 
-
-class InfraCreateView(ModelNameMixin, CreateView):
+class InfraCreateView(GenericCreateView):
     model = InfrastructureService
-    fields = "__all__"
-    template_name = "core/generic_form.html"
-    success_url = reverse_lazy("infra_list")
+    form_class = InfraForm
 
-
-class InfraUpdateView(ModelNameMixin, UpdateView):
+class InfraUpdateView(GenericUpdateView):
     model = InfrastructureService
-    fields = "__all__"
-    template_name = "core/generic_form.html"
-    success_url = reverse_lazy("infra_list")
+    form_class = InfraForm
 
 
-# ================= Agriculture ================= #
-class AgriListView(ModelNameMixin, ListView):
+# --- AgricultureSales ---
+class AgriListView(GenericListView):
     model = AgricultureSales
-    template_name = "core/generic_list.html"
 
-
-class AgriCreateView(ModelNameMixin, CreateView):
+class AgriCreateView(GenericCreateView):
     model = AgricultureSales
-    fields = "__all__"
-    template_name = "core/generic_form.html"
-    success_url = reverse_lazy("agri_list")
+    form_class = AgriForm
 
-
-class AgriUpdateView(ModelNameMixin, UpdateView):
+class AgriUpdateView(GenericUpdateView):
     model = AgricultureSales
-    fields = "__all__"
-    template_name = "core/generic_form.html"
-    success_url = reverse_lazy("agri_list")
+    form_class = AgriForm
 
 
-# ================= Economy ================= #
-class EconomyListView(ModelNameMixin, ListView):
+# --- CountyEconomy ---
+class EconomyListView(GenericListView):
     model = CountyEconomy
-    template_name = "core/generic_list.html"
 
-
-class EconomyCreateView(ModelNameMixin, CreateView):
+class EconomyCreateView(GenericCreateView):
     model = CountyEconomy
-    fields = "__all__"
-    template_name = "core/generic_form.html"
-    success_url = reverse_lazy("economy_list")
+    form_class = EconomyForm
 
-
-class EconomyUpdateView(ModelNameMixin, UpdateView):
+class EconomyUpdateView(GenericUpdateView):
     model = CountyEconomy
-    fields = "__all__"
-    template_name = "core/generic_form.html"
-    success_url = reverse_lazy("economy_list")
+    form_class = EconomyForm
 
 
-# ================= Demographics ================= #
-class DemoListView(ModelNameMixin, ListView):
+# --- CountyDemographics ---
+class DemoListView(GenericListView):
     model = CountyDemographics
-    template_name = "core/generic_list.html"
 
-
-class DemoCreateView(ModelNameMixin, CreateView):
+class DemoCreateView(GenericCreateView):
     model = CountyDemographics
-    fields = "__all__"
-    template_name = "core/generic_form.html"
-    success_url = reverse_lazy("demo_list")
+    form_class = DemoForm
 
-
-class DemoUpdateView(ModelNameMixin, UpdateView):
+class DemoUpdateView(GenericUpdateView):
     model = CountyDemographics
-    fields = "__all__"
-    template_name = "core/generic_form.html"
-    success_url = reverse_lazy("demo_list")
+    form_class = DemoForm

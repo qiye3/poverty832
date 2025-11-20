@@ -3,12 +3,16 @@ Django settings for poverty832 project.
 """
 
 from pathlib import Path
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+DOUBAO_API_KEY = os.getenv("DOUBAO_API_KEY")
 
 # ===============================
 # BASE_DIR
 # ===============================
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # ===============================
 # 基本配置
@@ -16,6 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = "django-insecure-change-this-to-anything-for-dev"
 DEBUG = True
 ALLOWED_HOSTS = []
+LOGIN_URL = "/login/"
 
 
 # ===============================

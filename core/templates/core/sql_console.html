@@ -1,0 +1,74 @@
+{% extends "core/base.html" %}
+
+{% block extra_css %}
+<link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+<style>
+.sql-box {
+    font-family: Consolas, monospace;
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    padding: 12px;
+    border-radius: 6px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<h2 class="mb-4">🧪 SQL 查询控制台</h2>
+
+<form method="post">
+    {% csrf_token %}
+
+    <label class="fw-bold">输入 SQL 语句：</label>
+
+    <textarea class="form-control sql-box" rows="4"
+              name="sql_query"
+              placeholder="例如：SELECT * FROM core_county LIMIT 10;">{{ sql_query }}</textarea>
+
+    <button class="btn btn-primary mt-3">
+        <i class="fa fa-terminal"></i> 执行 SQL
+    </button>
+</form>
+
+<hr>
+
+{% if error %}
+<div class="alert alert-danger">
+    ❌ <strong>SQL 错误：</strong> {{ error }}
+</div>
+{% endif %}
+
+{% if result %}
+<h4 class="mt-4">📄 查询结果</h4>
+
+<table id="datatable" class="table table-striped table-bordered">
+    <thead>
+        <tr>
+            {% for col in result.columns %}
+                <th>{{ col }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in result.rows %}
+        <tr>
+            {% for col in row %}
+                <td>{{ col }}</td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+<script>
+    new DataTable('#datatable');
+</script>
+{% endblock %}

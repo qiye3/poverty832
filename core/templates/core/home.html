@@ -1,14 +1,98 @@
 {% extends "core/base.html" %}
-{% block content %}
-<h2>首页</h2>
 
-<ul>
-    <li><a href="/county/">县域基础信息</a></li>
-    <li><a href="/infra/">基础设施信息</a></li>
-    <li><a href="/agri/">农业销售数据</a></li>
-    <li><a href="/economy/">经济发展数据</a></li>
-    <li><a href="/demo/">人口与就业数据</a></li>
-    <li><a href="/smart/">智能 SQL 查询</a></li>
-</ul>
+{% block content %}
+
+<!-- 标题 -->
+<h2 class="mb-4">🏠 数据库系统首页 Dashboard</h2>
+
+<!-- 快速入口卡片 -->
+<div class="row">
+
+    {% for item in quick_links %}
+    <div class="col-md-2 mb-3">
+        <a href="{{ item.url }}" class="text-decoration-none">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <div class="fs-3">{{ item.icon }}</div>
+                    <div class="fw-bold mt-2">{{ item.title }}</div>
+                </div>
+            </div>
+        </a>
+    </div>
+    {% endfor %}
+
+</div>
+
+<hr>
+
+<!-- 数据总览卡片 -->
+<h4 class="mt-4">📊 数据总览 Summary</h4>
+
+<div class="row">
+
+    {% for card in stats %}
+    <div class="col-md-3 mb-3">
+        <div class="card text-bg-light shadow-sm">
+            <div class="card-body">
+                <div class="fs-4 fw-bold">{{ card.value }}</div>
+                <div class="text-muted">{{ card.label }}</div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+</div>
+
+<hr>
+
+<!-- SQL 查询 -->
+<h4 class="mt-4">📝 SQL 查询</h4>
+
+<form method="post" class="mb-4">
+    {% csrf_token %}
+    <textarea name="sql_query" class="form-control" rows="3"
+              placeholder="例如：SELECT * FROM core_county LIMIT 10;">{{ sql_query }}</textarea>
+    <button class="btn btn-primary mt-2">
+        <i class="fa fa-terminal"></i> 执行 SQL
+    </button>
+</form>
+
+<!-- AI 智能查询 -->
+<h4 class="mt-4">🤖 智能自然语言查询（AI）</h4>
+
+<form method="post">
+    {% csrf_token %}
+    <textarea name="ai_query" class="form-control" rows="2"
+              placeholder="例如：告诉我人口最多的县有哪些？">{{ ai_query }}</textarea>
+    <button class="btn btn-success mt-2">
+        <i class="fa fa-brain"></i> 让 AI 查询数据库
+    </button>
+</form>
+
+<hr>
+
+<!-- 查询结果展示 -->
+{% if result %}
+<h4 class="mt-4">📄 查询结果</h4>
+
+<table class="table table-bordered table-striped mt-3">
+    <thead>
+        <tr>
+            {% for col in result.columns %}
+                <th>{{ col }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in result.rows %}
+            <tr>
+                {% for col in row %}
+                    <td>{{ col }}</td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
 
 {% endblock %}

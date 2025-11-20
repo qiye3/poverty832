@@ -1,4 +1,7 @@
 from django.urls import path
+from django.contrib import admin   # ← 新增
+from django.urls import include    # ← 新增
+
 from .views.home import home
 from .views.smart_query import smart_query
 from .views.generic_views import (
@@ -8,8 +11,12 @@ from .views.generic_views import (
     EconomyListView, EconomyCreateView, EconomyUpdateView,
     DemoListView, DemoCreateView, DemoUpdateView
 )
+from .views.sql_console import sql_console
+from core.views.auth import user_login, user_logout
+
 
 urlpatterns = [
+    # 首页
     path('', home, name="home"),
 
     # County
@@ -37,6 +44,16 @@ urlpatterns = [
     path('demo/add/', DemoCreateView.as_view(), name="demo_add"),
     path('demo/<int:pk>/edit/', DemoUpdateView.as_view(), name="demo_edit"),
 
-    # Smart Query (LLM)
-    path('smart/', smart_query, name="smart_query"),
+    # SQL Console
+    path("sql/", sql_console, name="sql_console"),
+
+    # Smart Query（大模型）
+    path("smart/", smart_query, name="smart_query"),
+
+    # Auth login/logout
+    path("login/", user_login, name="login"),
+    path("logout/", user_logout, name="logout"),
+
+    # Django Admin（可留可不留）
+    path('admin/', admin.site.urls),
 ]
