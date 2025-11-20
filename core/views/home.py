@@ -29,6 +29,7 @@ def run_sql(query: str):
 def home(request):
     sql_query = ""
     ai_query = ""
+    ai_sql = ""  # AI生成的SQL
     result = None
 
     # --------------------------
@@ -128,5 +129,6 @@ def home(request):
         "stats": stats,
         "sql_query": sql_query,
         "ai_query": ai_query,
+        "ai_sql": ai_sql,  # 传递AI生成的SQL
         "result": result,
     })

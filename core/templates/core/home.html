@@ -78,6 +78,14 @@
     </button>
 </form>
 
+<!-- 显示AI生成的SQL -->
+{% if ai_sql %}
+<div class="alert alert-info mt-3">
+    <strong>🔍 AI 生成的 SQL：</strong><br>
+    <code style="display: block; padding: 10px; background-color: #f8f9fa; border-radius: 4px; margin-top: 8px; white-space: pre-wrap; word-break: break-all;">{{ ai_sql }}</code>
+</div>
+{% endif %}
+
 <hr>
 
 <!-- 查询结果展示 -->
