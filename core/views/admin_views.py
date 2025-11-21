@@ -3,6 +3,8 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User, Group
 from django.contrib import messages
 from django.db.models import Q
+from django.core import serializers
+import json
 from core.permissions import get_user_permissions, TABLE_DISPLAY_NAMES
 from core.models import UserTablePermission
 
@@ -29,9 +31,19 @@ def user_management(request):
     users_with_permissions = []
     for user in users:
         permissions = get_user_permissions(user)
+        # 将权限序列化为 JSON 字符串，方便在模板中使用
+        permissions_json = {}
+        for key, perm in permissions.items():
+            permissions_json[key] = {
+                'name': perm['name'],
+                'view': perm['view'],
+                'edit': perm['edit'],
+                'source': perm.get('source', 'role')
+            }
         users_with_permissions.append({
             'user': user,
             'permissions': permissions,
+            'permissions_json': json.dumps(permissions_json),
             'groups': user.groups.all(),
         })
     

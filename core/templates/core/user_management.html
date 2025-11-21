@@ -84,33 +84,35 @@
                         <td>
                             <div class="btn-group btn-group-sm">
                                 <!-- 表权限按钮 -->
-                                <button type="button" class="btn btn-outline-info" 
-                                        data-bs-toggle="modal" 
-                                        data-bs-target="#permissionModal{{ item.user.id }}">
+                                <button type="button" class="btn btn-outline-info btn-edit-permission" 
+                                        data-user-id="{{ item.user.id }}"
+                                        data-username="{{ item.user.username }}">
                                     <i class="fa fa-key"></i> 表权限
                                 </button>
                                 
                                 <!-- 更改角色按钮 -->
-                                <button type="button" class="btn btn-outline-primary" 
-                                        data-bs-toggle="modal" 
-                                        data-bs-target="#roleModal{{ item.user.id }}">
+                                <button type="button" class="btn btn-outline-primary btn-edit-role" 
+                                        data-user-id="{{ item.user.id }}"
+                                        data-username="{{ item.user.username }}"
+                                        data-user-groups="{% for group in item.groups %}{{ group.id }},{% endfor %}">
                                     <i class="fa fa-user-cog"></i> 角色
                                 </button>
                                 
                                 <!-- 管理员权限按钮 -->
                                 {% if item.user.id != user.id %}
-                                <button type="button" class="btn {% if item.user.is_superuser %}btn-warning{% else %}btn-outline-warning{% endif %}" 
-                                        data-bs-toggle="modal" 
-                                        data-bs-target="#adminModal{{ item.user.id }}">
+                                <button type="button" class="btn {% if item.user.is_superuser %}btn-warning{% else %}btn-outline-warning{% endif %} btn-toggle-admin" 
+                                        data-user-id="{{ item.user.id }}"
+                                        data-username="{{ item.user.username }}"
+                                        data-is-admin="{{ item.user.is_superuser|yesno:'true,false' }}">
                                     <i class="fa fa-shield-alt"></i> {% if item.user.is_superuser %}取消管理员{% else %}设为管理员{% endif %}
                                 </button>
                                 {% endif %}
                                 
                                 <!-- 删除按钮 -->
                                 {% if item.user.id != user.id %}
-                                <button type="button" class="btn btn-outline-danger" 
-                                        data-bs-toggle="modal" 
-                                        data-bs-target="#deleteModal{{ item.user.id }}">
+                                <button type="button" class="btn btn-outline-danger btn-delete-user" 
+                                        data-user-id="{{ item.user.id }}"
+                                        data-username="{{ item.user.username }}">
                                     <i class="fa fa-trash"></i> 删除
                                 </button>
                                 {% else %}
@@ -121,182 +123,438 @@
                             </div>
                         </td>
                     </tr>
-                    
-                    <!-- 表权限设置模态框 -->
-                    <div class="modal fade" id="permissionModal{{ item.user.id }}" tabindex="-1">
-                        <div class="modal-dialog modal-lg">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title">设置用户表权限</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                </div>
-                                <form method="post" action="{% url 'set_user_table_permissions' item.user.id %}">
-                                    {% csrf_token %}
-                                    <div class="modal-body">
-                                        <p><strong>用户：</strong>{{ item.user.username }}</p>
-                                        <p class="text-muted"><small>设置用户对每张表的权限。如果未设置，将使用角色权限。</small></p>
-                                        
-                                        <table class="table table-bordered">
-                                            <thead>
-                                                <tr>
-                                                    <th>数据表</th>
-                                                    <th>查看权限</th>
-                                                    <th>编辑权限</th>
-                                                    <th>当前状态</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {% for table_key, perm in item.permissions.items %}
-                                                <tr>
-                                                    <td>{{ perm.name }}</td>
-                                                    <td>
-                                                        <div class="form-check form-switch">
-                                                            <input class="form-check-input" type="checkbox" 
-                                                                   name="view_{{ table_key }}" 
-                                                                   id="view_{{ table_key }}_{{ item.user.id }}"
-                                                                   {% if perm.view %}checked{% endif %}>
-                                                        </div>
-                                                    </td>
-                                                    <td>
-                                                        <div class="form-check form-switch">
-                                                            <input class="form-check-input" type="checkbox" 
-                                                                   name="edit_{{ table_key }}" 
-                                                                   id="edit_{{ table_key }}_{{ item.user.id }}"
-                                                                   {% if perm.edit %}checked{% endif %}>
-                                                        </div>
-                                                    </td>
-                                                    <td>
-                                                        {% if perm.source == 'custom' %}
-                                                            <span class="badge bg-info">自定义</span>
-                                                        {% else %}
-                                                            <span class="badge bg-secondary">角色</span>
-                                                        {% endif %}
-                                                    </td>
-                                                </tr>
-                                                {% endfor %}
-                                            </tbody>
-                                        </table>
-                                        
-                                        <div class="alert alert-warning">
-                                            <small>
-                                                <strong>注意：</strong>自定义权限会覆盖角色权限。如果取消所有自定义权限，将恢复使用角色权限。
-                                            </small>
-                                        </div>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                                        <button type="submit" class="btn btn-primary">保存权限</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- 更改角色模态框 -->
-                    <div class="modal fade" id="roleModal{{ item.user.id }}" tabindex="-1">
-                        <div class="modal-dialog">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title">更改用户角色</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                </div>
-                                <form method="post" action="{% url 'change_user_role' item.user.id %}">
-                                    {% csrf_token %}
-                                    <div class="modal-body">
-                                        <p><strong>用户：</strong>{{ item.user.username }}</p>
-                                        <div class="mb-3">
-                                            <label class="form-label">选择角色</label>
-                                            <select name="group_id" class="form-select">
-                                                <option value="">-- 清除角色 --</option>
-                                                {% for group in all_groups %}
-                                                    <option value="{{ group.id }}" 
-                                                        {% if group in item.groups %}selected{% endif %}>
-                                                        {{ group.name }}
-                                                    </option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
-                                        <div class="alert alert-info">
-                                            <small>
-                                                <strong>角色说明：</strong><br>
-                                                • <strong>data_entry</strong>：数据录入员，可以查看和编辑所有表<br>
-                                                • <strong>analyst</strong>：分析师，只能查看数据，不能编辑
-                                            </small>
-                                        </div>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                                        <button type="submit" class="btn btn-primary">保存</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- 管理员权限模态框 -->
-                    {% if item.user.id != user.id %}
-                    <div class="modal fade" id="adminModal{{ item.user.id }}" tabindex="-1">
-                        <div class="modal-dialog">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title">{% if item.user.is_superuser %}取消管理员权限{% else %}提升为管理员{% endif %}</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                </div>
-                                <div class="modal-body">
-                                    {% if item.user.is_superuser %}
-                                    <p>确定要取消用户 <strong>{{ item.user.username }}</strong> 的管理员权限吗？</p>
-                                    <p class="text-warning"><small>取消后，该用户将失去管理员权限，无法访问用户管理页面和Django后台。</small></p>
-                                    {% else %}
-                                    <p>确定要将用户 <strong>{{ item.user.username }}</strong> 提升为管理员吗？</p>
-                                    <p class="text-info"><small>提升后，该用户将拥有所有管理员权限，包括：<br>
-                                    • 查看和管理所有用户<br>
-                                    • 更改用户角色和权限<br>
-                                    • 删除用户<br>
-                                    • 访问Django后台</small></p>
-                                    {% endif %}
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                                    <form method="post" action="{% url 'toggle_admin' item.user.id %}" class="d-inline">
-                                        {% csrf_token %}
-                                        <button type="submit" class="btn {% if item.user.is_superuser %}btn-warning{% else %}btn-success{% endif %}">
-                                            {% if item.user.is_superuser %}确认取消{% else %}确认提升{% endif %}
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
-                    
-                    <!-- 删除确认模态框 -->
-                    <div class="modal fade" id="deleteModal{{ item.user.id }}" tabindex="-1">
-                        <div class="modal-dialog">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title">确认删除</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <p>确定要删除用户 <strong>{{ item.user.username }}</strong> 吗？</p>
-                                    <p class="text-danger"><small>此操作不可恢复！</small></p>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                                    <form method="post" action="{% url 'delete_user' item.user.id %}" class="d-inline">
-                                        {% csrf_token %}
-                                        <button type="submit" class="btn btn-danger">确认删除</button>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
 </div>
+
+<!-- 权限数据（JSON） -->
+<script type="application/json" id="permissions-data">
+{
+    {% for item in users_with_permissions %}
+    "{{ item.user.id }}": {{ item.permissions_json|safe }}{% if not forloop.last %},{% endif %}
+    {% endfor %}
+}
+</script>
+
+<!-- 模态框容器（动态加载） -->
+<div id="modalContainer"></div>
+
+<!-- 临时测试：JavaScript 是否能执行 -->
+<script>
+console.log('测试1: 在 content block 中的脚本执行了吗？');
+</script>
+
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+// 立即执行测试
+(function() {
+    console.log('=== 用户管理页面 JavaScript 开始加载 ===');
+    
+    // 测试：立即输出
+    if (typeof console !== 'undefined') {
+        console.log('✓ Console 可用');
+    } else {
+        alert('Console 不可用！');
+    }
+    
+    // 测试：检查元素
+    setTimeout(function() {
+        console.log('✓ 延迟执行测试');
+        const testBtn = document.querySelector('.btn-edit-permission');
+        if (testBtn) {
+            console.log('✓ 找到按钮:', testBtn);
+            console.log('按钮 data-user-id:', testBtn.getAttribute('data-user-id'));
+        } else {
+            console.error('✗ 找不到 .btn-edit-permission 按钮');
+        }
+    }, 500);
+})();
+
+// 解析权限数据
+let permissionsData = {};
+try {
+    const permissionsElement = document.getElementById('permissions-data');
+    if (permissionsElement) {
+        permissionsData = JSON.parse(permissionsElement.textContent);
+        console.log('✓ 权限数据加载成功:', Object.keys(permissionsData).length, '个用户');
+    } else {
+        console.error('✗ 找不到权限数据元素');
+    }
+} catch (e) {
+    console.error('✗ 解析权限数据失败:', e);
+}
+
+// 获取 CSRF token
+const csrfToken = "{{ csrf_token }}";
+console.log('✓ CSRF Token:', csrfToken ? '已获取' : '未获取');
+
+// 等待 DOM 完全加载
+function initButtons() {
+    console.log('=== 开始初始化按钮事件 ===');
+    
+    const modalContainer = document.getElementById('modalContainer');
+    if (!modalContainer) {
+        console.error('✗ 找不到 modalContainer 元素');
+        return;
+    }
+    console.log('✓ 找到 modalContainer');
+    
+    // 直接绑定到所有按钮
+    const permissionButtons = document.querySelectorAll('.btn-edit-permission');
+    console.log('✓ 找到表权限按钮:', permissionButtons.length, '个');
+    
+    permissionButtons.forEach((btn, index) => {
+        console.log(`绑定按钮 ${index + 1}:`, btn);
+        btn.onclick = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('>>> 点击了表权限按钮', this);
+            
+            const userId = String(this.getAttribute('data-user-id') || this.dataset.userId);
+            const username = this.getAttribute('data-username') || this.dataset.username;
+            console.log('用户ID:', userId, '用户名:', username);
+            
+            if (!userId || !username) {
+                console.error('✗ 缺少必要的数据属性', {
+                    dataset: this.dataset,
+                    attributes: Array.from(this.attributes).map(a => a.name + '=' + a.value)
+                });
+                alert('错误：缺少用户信息');
+                return;
+            }
+            
+            const permissions = permissionsData[userId] || {};
+            console.log('用户权限:', permissions);
+            
+            // 构建权限表单HTML
+            let permissionRows = '';
+            const tableNames = {
+                'county': '县表',
+                'infra': '基础设施表',
+                'agri': '农业表',
+                'economy': '经济表',
+                'demo': '人口统计表'
+            };
+            
+            Object.keys(tableNames).forEach(tableKey => {
+                const perm = permissions[tableKey] || { view: false, edit: false, source: 'role' };
+                permissionRows += `
+                    <tr>
+                        <td>${tableNames[tableKey]}</td>
+                        <td>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" 
+                                       name="view_${tableKey}" 
+                                       ${perm.view ? 'checked' : ''}>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" 
+                                       name="edit_${tableKey}" 
+                                       ${perm.edit ? 'checked' : ''}>
+                            </div>
+                        </td>
+                        <td>
+                            ${perm.source === 'custom' ? 
+                                '<span class="badge bg-info">自定义</span>' : 
+                                '<span class="badge bg-secondary">角色</span>'}
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            modalContainer.innerHTML = `
+                <div class="modal fade" id="permissionModal" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">设置用户表权限</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <form method="post" action="/manage/users/${userId}/table_permissions/">
+                                <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
+                                <div class="modal-body">
+                                    <p><strong>用户：</strong>${username}</p>
+                                    <p class="text-muted"><small>设置用户对每张表的权限。如果未设置，将使用角色权限。</small></p>
+                                    <table class="table table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th>数据表</th>
+                                                <th>查看权限</th>
+                                                <th>编辑权限</th>
+                                                <th>当前状态</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${permissionRows}
+                                        </tbody>
+                                    </table>
+                                    <div class="alert alert-warning">
+                                        <small><strong>注意：</strong>自定义权限会覆盖角色权限。如果取消所有自定义权限，将恢复使用角色权限。</small>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                                    <button type="submit" class="btn btn-primary">保存权限</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // 立即显示模态框
+            setTimeout(() => {
+                const modalElement = document.getElementById('permissionModal');
+                if (modalElement) {
+                    if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                        const modal = new bootstrap.Modal(modalElement);
+                        modal.show();
+                        console.log('✓ 表权限模态框已显示');
+                    } else {
+                        modalElement.style.display = 'block';
+                        modalElement.classList.add('show');
+                    }
+                } else {
+                    console.error('✗ 找不到表权限模态框元素');
+                }
+            }, 50);
+        };
+    });
+    
+    // 角色编辑
+    const roleButtons = document.querySelectorAll('.btn-edit-role');
+    console.log('✓ 找到角色按钮:', roleButtons.length, '个');
+    
+    roleButtons.forEach((btn, index) => {
+        console.log(`绑定角色按钮 ${index + 1}:`, btn);
+        btn.onclick = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('>>> 点击了角色按钮', this);
+            
+            const userId = String(this.getAttribute('data-user-id') || this.dataset.userId);
+            const username = this.getAttribute('data-username') || this.dataset.username;
+            const userGroups = ((this.getAttribute('data-user-groups') || this.dataset.userGroups) || '').split(',').filter(id => id);
+            
+            if (!userId || !username) {
+                console.error('✗ 缺少必要的数据属性');
+                alert('错误：缺少用户信息');
+                return;
+            }
+            
+            // 构建角色选项HTML
+            let roleOptions = '<option value="">-- 清除角色 --</option>';
+            {% for group in all_groups %}
+            if (userGroups.includes('{{ group.id }}')) {
+                roleOptions += '<option value="{{ group.id }}" selected>{{ group.name }}</option>';
+            } else {
+                roleOptions += '<option value="{{ group.id }}">{{ group.name }}</option>';
+            }
+            {% endfor %}
+            
+            modalContainer.innerHTML = `
+                <div class="modal fade" id="roleModal" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">更改用户角色</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <form method="post" action="/manage/users/${userId}/change_role/">
+                                <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
+                                <div class="modal-body">
+                                    <p><strong>用户：</strong>${username}</p>
+                                    <div class="mb-3">
+                                        <label class="form-label">选择角色</label>
+                                        <select name="group_id" class="form-select">
+                                            ${roleOptions}
+                                        </select>
+                                    </div>
+                                    <div class="alert alert-info">
+                                        <small>
+                                            <strong>角色说明：</strong><br>
+                                            • <strong>data_entry</strong>：数据录入员，可以查看和编辑所有表<br>
+                                            • <strong>analyst</strong>：分析师，只能查看数据，不能编辑
+                                        </small>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                                    <button type="submit" class="btn btn-primary">保存</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            setTimeout(() => {
+                const modalElement = document.getElementById('roleModal');
+                if (modalElement) {
+                    if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                        const modal = new bootstrap.Modal(modalElement);
+                        modal.show();
+                        console.log('✓ 角色模态框已显示');
+                    } else {
+                        modalElement.style.display = 'block';
+                        modalElement.classList.add('show');
+                    }
+                }
+            }, 50);
+        };
+    });
+    
+    // 管理员权限切换
+    const adminButtons = document.querySelectorAll('.btn-toggle-admin');
+    console.log('✓ 找到管理员按钮:', adminButtons.length, '个');
+    
+    adminButtons.forEach((btn, index) => {
+        console.log(`绑定管理员按钮 ${index + 1}:`, btn);
+        btn.onclick = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('>>> 点击了管理员按钮', this);
+            
+            const userId = String(this.getAttribute('data-user-id') || this.dataset.userId);
+            const username = this.getAttribute('data-username') || this.dataset.username;
+            const isAdmin = (this.getAttribute('data-is-admin') || this.dataset.isAdmin) === 'true';
+            
+            if (!userId || !username) {
+                console.error('✗ 缺少必要的数据属性');
+                alert('错误：缺少用户信息');
+                return;
+            }
+            
+            modalContainer.innerHTML = `
+                <div class="modal fade" id="adminModal" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">${isAdmin ? '取消管理员权限' : '提升为管理员'}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                ${isAdmin ? 
+                                    `<p>确定要取消用户 <strong>${username}</strong> 的管理员权限吗？</p>
+                                     <p class="text-warning"><small>取消后，该用户将失去管理员权限，无法访问用户管理页面和Django后台。</small></p>` :
+                                    `<p>确定要将用户 <strong>${username}</strong> 提升为管理员吗？</p>
+                                     <p class="text-info"><small>提升后，该用户将拥有所有管理员权限，包括：<br>
+                                     • 查看和管理所有用户<br>
+                                     • 更改用户角色和权限<br>
+                                     • 删除用户<br>
+                                     • 访问Django后台</small></p>`}
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                                <form method="post" action="/manage/users/${userId}/toggle_admin/" class="d-inline">
+                                    <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
+                                    <button type="submit" class="btn ${isAdmin ? 'btn-warning' : 'btn-success'}">
+                                        ${isAdmin ? '确认取消' : '确认提升'}
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            setTimeout(() => {
+                const modalElement = document.getElementById('adminModal');
+                if (modalElement) {
+                    if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                        const modal = new bootstrap.Modal(modalElement);
+                        modal.show();
+                        console.log('✓ 管理员模态框已显示');
+                    } else {
+                        modalElement.style.display = 'block';
+                        modalElement.classList.add('show');
+                    }
+                }
+            }, 50);
+        };
+    });
+    
+    // 删除用户
+    const deleteButtons = document.querySelectorAll('.btn-delete-user');
+    console.log('✓ 找到删除按钮:', deleteButtons.length, '个');
+    
+    deleteButtons.forEach((btn, index) => {
+        console.log(`绑定删除按钮 ${index + 1}:`, btn);
+        btn.onclick = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('>>> 点击了删除按钮', this);
+            
+            const userId = String(this.getAttribute('data-user-id') || this.dataset.userId);
+            const username = this.getAttribute('data-username') || this.dataset.username;
+            
+            if (!userId || !username) {
+                console.error('✗ 缺少必要的数据属性');
+                alert('错误：缺少用户信息');
+                return;
+            }
+            
+            modalContainer.innerHTML = `
+                <div class="modal fade" id="deleteModal" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">确认删除</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p>确定要删除用户 <strong>${username}</strong> 吗？</p>
+                                <p class="text-danger"><small>此操作不可恢复！</small></p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                                <form method="post" action="/manage/users/${userId}/delete/" class="d-inline">
+                                    <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
+                                    <button type="submit" class="btn btn-danger">确认删除</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            setTimeout(() => {
+                const modalElement = document.getElementById('deleteModal');
+                if (modalElement) {
+                    if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                        const modal = new bootstrap.Modal(modalElement);
+                        modal.show();
+                        console.log('✓ 删除模态框已显示');
+                    } else {
+                        modalElement.style.display = 'block';
+                        modalElement.classList.add('show');
+                    }
+                }
+            }, 50);
+        };
+    });
+    
+    console.log('=== 按钮事件绑定完成 ===');
+}
+
+// 页面加载完成后初始化
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM 加载完成，初始化按钮');
+        setTimeout(initButtons, 100);
+    });
+} else {
+    console.log('DOM 已就绪，立即初始化按钮');
+    setTimeout(initButtons, 100);
+}
+</script>
 
 {% endblock %}
 
